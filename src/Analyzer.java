@@ -48,7 +48,9 @@ public class Analyzer {
                 break;
             if (temp[0].equals("LNAT")) {
                 ArrayList<String> values = new ArrayList<>();
-                Collections.addAll(values, temp[2].split(","));
+                for (String j : temp[2].split(",")) {
+                    values.add(j);
+                }
 //                definitions.put(temp[1], values);
             }
         }
@@ -71,6 +73,7 @@ public class Analyzer {
 //            depth = 0;
 //            return false;
 //        }
+
         String[] line = desc.get(currentPos).trim().split("\\s+;?|;");
         currentPos++;
         writer.flush();
@@ -83,8 +86,9 @@ public class Analyzer {
         }
 
         if (line[0].contains("GRV") || line[0].contains("GRK")) {
-            int len;
+            int len = 0;
             String name = line[1].replace("(", "").replace(")", "").trim();
+
             if(counters.get(name) == null) {
                 name = line[0].split("\\(")[1].replace("(", "").replace(")", "").trim();
             }
@@ -115,17 +119,17 @@ public class Analyzer {
         if (line[0].equals("MIT")) {
             writer.write(line[1] + ":");
             if (line[2].contains("A")) {
-                int len = Integer.parseInt(line[2].substring(line[2].indexOf("(") + 1, line[2].indexOf(")")));
+                int len = Integer.valueOf(line[2].substring(line[2].indexOf("(") + 1, line[2].indexOf(")")));
                 String data = reader.ReadSymbols(len);
                 writer.write(data);
             }
             if (line[2].contains("B")) {
-                int len = Integer.parseInt(line[2].substring(line[2].indexOf("(") + 1, line[2].indexOf(")")));
-                Object data;
+                int len = Integer.valueOf(line[2].substring(line[2].indexOf("(") + 1, line[2].indexOf(")")));
+                Object data = null;
                 int acc = -1;
                 for (String i : line) {
                     if (i.contains("D")) {
-                        acc = Integer.parseInt(i.substring(i.indexOf("(") + 1, i.indexOf(")")));
+                        acc = Integer.valueOf(i.substring(i.indexOf("(") + 1, i.indexOf(")")));
                     }
                 }
                 if (acc == -1)
@@ -145,7 +149,7 @@ public class Analyzer {
             for (int i = 1; i < line.length; i++) {
                 if (line[i].length() > 0) {
                     if (line[i].charAt(0) == 'B') {
-                        len = Integer.parseInt(line[i].substring(line[i].indexOf("(") + 1, line[i].indexOf(")")));
+                        len = Integer.valueOf(line[i].substring(line[i].indexOf("(") + 1, line[i].indexOf(")")));
                     }
                     if (line[i].charAt(0) == 'Q') {
                         writer.write(line[i] + ": ");
@@ -165,12 +169,12 @@ public class Analyzer {
             for (int i = 1; i < line.length; i++) {
                 if (line[i].length() > 0) {
                     if (line[i].charAt(0) == 'B') {
-                        len = Integer.parseInt(line[i].substring(line[i].indexOf("(") + 1, line[i].indexOf(")")));
+                        len = Integer.valueOf(line[i].substring(line[i].indexOf("(") + 1, line[i].indexOf(")")));
                     }
                 }
             }
 
-            writer.write(reader.ReadInt(len) + line[1]);
+            writer.write(String.valueOf(reader.ReadInt(len)) + line[1]);
             PrintComment(line);
             writer.newLine();
             writer.flush();
@@ -181,7 +185,7 @@ public class Analyzer {
             for (int i = 1; i < line.length; i++) {
                 if (line[i].length() > 0) {
                     if (line[i].charAt(0) == 'B') {
-                        len = Integer.parseInt(line[i].substring(line[i].indexOf("(") + 1, line[i].indexOf(")")));
+                        len = Integer.valueOf(line[i].substring(line[i].indexOf("(") + 1, line[i].indexOf(")")));
                     }
                 }
             }
@@ -223,12 +227,12 @@ public class Analyzer {
 
     private void PrintComment(String[] line) throws IOException {
         boolean flag = false;
-        for (String s : line) {
-            if (s.contains("//")) {
+        for (int i = 0; i < line.length; i++) {
+            if (line[i].contains("//")) {
                 flag = true;
             }
             if (flag) {
-                writer.write(" " + s);
+                writer.write(" " + line[i]);
             }
         }
     }
@@ -238,19 +242,19 @@ public class Analyzer {
         String[] line = desc.get(currentPos).trim().split("\\s+;?|;");
         int len = length;
         if(len == 0)
-        len = Integer.parseInt(line[0].substring(line[0].indexOf("(") + 1, line[0].indexOf(")")));
+        len = Integer.valueOf(line[0].substring(line[0].indexOf("(") + 1, line[0].indexOf(")")));
         String name = "";
-        for (String s : line) {
-            if (s.length() > 0)
-                if (s.charAt(0) == 'C') {
-                    name = s.replace("C", "").replace("(", "").replace(")", "");
-                }
+        for(int i = 0; i< line.length; i++){
+            if(line[i].length() > 0)
+            if(line[i].charAt(0) == 'C'){
+                name = line[i].replace("C","").replace("(","").replace(")","");
+            }
         }
         //currentPos++;
         int start = currentPos;
-        int count;
+        int count = 0;
 
-        if(grpName.equals("OBLED"))
+
         for (int i = 0; i < len; i++) {
             if(definitions.get(name) != null){
                 writer.write("INDEX: " + definitions.get(name).get(i));
@@ -280,10 +284,10 @@ public class Analyzer {
             ParseLine(null);
         }
         depth = 0;
-//        System.out.println("end group 1");
+
     }
 
-    private void SeekToDefinition(int type) {
+    private void SeekToDefinition(int type) throws IOException {
         for (int j = 0; j < desc.size(); j++) {
             String i = desc.get(j);
             int temp = i.indexOf("RBODY(" + type);
@@ -293,12 +297,14 @@ public class Analyzer {
                 depth += 1;
                 break;
             }
+            else{
+
+            }
         }
     }
 
     public void ParseHeader() throws IOException {
         grLen = reader.ReadInt(2);
-//        System.out.println(grLen);
         reader.Skip(2);
 
         writer.write("\n\nДЛЗАП: " + grLen + " НАЧАЛО ЗАГОЛОВКА");
