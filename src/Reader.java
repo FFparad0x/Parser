@@ -1,10 +1,8 @@
 import java.io.IOException;
-import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.function.Function;
 
 public class Reader {
     int current;
