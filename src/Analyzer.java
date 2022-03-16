@@ -19,6 +19,7 @@ public class Analyzer {
     int grStart;
     Dictionary<String, Integer> counters;
     Dictionary<String, ArrayList<String>> definitions;
+    List<String> names;
 
     public Analyzer(String descriptionFilePath, String DataFilePath, String Output) throws IOException {
         desc = Files.readAllLines(Paths.get(descriptionFilePath), Charset.forName("Windows-1251"));
@@ -29,6 +30,7 @@ public class Analyzer {
         stack = new ArrayList<>();
         counters = new Hashtable<>();
         definitions = new Hashtable<>();
+        names = new ArrayList<>();
     }
 
     public void Process() throws IOException {
@@ -78,8 +80,8 @@ public class Analyzer {
         currentPos++;
         writer.flush();
         if (line[0].contains("GRP")) {
-            writer.write("Новая группа: " + line[1]);
-            writer.newLine();
+            //writer.write("Новая группа: " + line[1]);
+//            writer.newLine();
             depth++;
             stack.add(line[1].replace("(", "").replace(")", "").trim());
             ParseGroup(0,line[1].replace("(", "").replace(")", "").trim());
@@ -102,8 +104,8 @@ public class Analyzer {
                     break;
                 }
             }
-            writer.write("Новая группа GRV: " + searchname);
-            writer.newLine();
+            //writer.write("Новая группа GRV: " + searchname);
+//            writer.newLine();
             int grstart = currentPos;
             if(len != 0) {
                     currentPos = grstart;
@@ -117,11 +119,28 @@ public class Analyzer {
         }
 
         if (line[0].equals("MIT")) {
-            writer.write(line[1] + ":");
+
+
+            boolean skip = false;
+
+//                <div class="form-check">
+//  <input class="form-check-input" type="checkbox" value="2" name="data" id="flexCheckChecked" checked form="search">
+//  <label class="form-check-label" for="flexCheckChecked">
+//                    Checked checkbox
+//                    </label>
+//</div>
+            if(names.contains(line[1]) || rbodyType != 1)
+                skip = true;
+            if(!skip) {
+                writer.write("<div class=\"form-check\">\n");
+                writer.write("<input class=\"form-check-input\" type=\"checkbox\" value=\"" + line[1] + "\"+ line[1] +\"\" name=\"data\" id=\"MIT" + reader.current + "\" checked form=\"search\">\n");
+                writer.write("<label class=\"form-check-label\" for=\"MIT" + reader.current + "\">\n");
+            }
+//            writer.write(line[1] + ":");
             if (line[2].contains("A")) {
                 int len = Integer.valueOf(line[2].substring(line[2].indexOf("(") + 1, line[2].indexOf(")")));
                 String data = reader.ReadSymbols(len);
-                writer.write(data);
+//                writer.write(data);
             }
             if (line[2].contains("B")) {
                 int len = Integer.valueOf(line[2].substring(line[2].indexOf("(") + 1, line[2].indexOf(")")));
@@ -136,36 +155,42 @@ public class Analyzer {
                     data = reader.ReadInt(len);
                 else
                     data = reader.ReadDouble(len, acc);
-                writer.write(String.valueOf(data));
+//                writer.write(String.valueOf(data));
             }
-            PrintComment(line);
-            writer.newLine();
+            if(!skip) {
+                PrintComment(line);
+                writer.write("</label></div>");
+                names.add(line[1]);
+                writer.newLine();
+            }
+
             writer.flush();
         }
 
         if (line[0].contains("CHA")) {
             int len = 0;
-            writer.write(line[0].replace("(", " ").replace(")", "").trim() + " ");
+            //writer.write(line[0].replace("(", " ").replace(")", "").trim() + " ");
             for (int i = 1; i < line.length; i++) {
                 if (line[i].length() > 0) {
                     if (line[i].charAt(0) == 'B') {
                         len = Integer.valueOf(line[i].substring(line[i].indexOf("(") + 1, line[i].indexOf(")")));
                     }
                     if (line[i].charAt(0) == 'Q') {
-                        writer.write(line[i] + ": ");
+                        //writer.write(line[i] + ": ");
                     }
                 }
             }
-            writer.write(String.valueOf(reader.ReadInt(len)));
-            PrintComment(line);
-            writer.newLine();
+            //writer.write(String.valueOf(reader.ReadInt(len)));
+            reader.ReadInt(len);
+//            PrintComment(line);
+//            writer.newLine();
             writer.flush();
         }
 
         if (line[0].contains("KEY")) {
             int len = 0;
-            writer.write("Тут был ключ");
-            writer.write(line[0].replace("(", " ").replace(")", "").trim() + ":");
+            //writer.write("Тут был ключ");
+            //writer.write(line[0].replace("(", " ").replace(")", "").trim() + ":");
             for (int i = 1; i < line.length; i++) {
                 if (line[i].length() > 0) {
                     if (line[i].charAt(0) == 'B') {
@@ -174,9 +199,10 @@ public class Analyzer {
                 }
             }
 
-            writer.write(String.valueOf(reader.ReadInt(len)) + line[1]);
-            PrintComment(line);
-            writer.newLine();
+            //writer.write(String.valueOf(reader.ReadInt(len)) + line[1]);
+            reader.ReadInt(len);
+//            PrintComment(line);
+//            writer.newLine();
             writer.flush();
         }
 
@@ -191,9 +217,9 @@ public class Analyzer {
             }
             int temp = reader.ReadInt(len);
             counters.put(line[1], temp);
-            writer.write(line[0] + " " + line[1] + ": " + temp);
-            PrintComment(line);
-            writer.newLine();
+            //writer.write(line[0] + " " + line[1] + ": " + temp);
+//            PrintComment(line);
+//            writer.newLine();
             writer.flush();
         }
 
@@ -221,7 +247,7 @@ public class Analyzer {
                 }
             }
         }
-        writer.write("Группа имела длину 0, поэтому пропушена\n");
+        //writer.write("Группа имела длину 0, поэтому пропушена\n");
 
     }
 
@@ -230,6 +256,7 @@ public class Analyzer {
         for (int i = 0; i < line.length; i++) {
             if (line[i].contains("//")) {
                 flag = true;
+                continue;
             }
             if (flag) {
                 writer.write(" " + line[i]);
@@ -257,7 +284,7 @@ public class Analyzer {
 
         for (int i = 0; i < len; i++) {
             if(definitions.get(name) != null){
-                writer.write("INDEX: " + definitions.get(name).get(i));
+//                writer.write("INDEX: " + definitions.get(name).get(i));
             }
             count = 0;
             while (ParseLine(grpName)) {
@@ -268,9 +295,9 @@ public class Analyzer {
         }
         //currentPos += count;
         depth--;
-        writer.write("Конец группы: " + grpName);
-        writer.newLine();
-        writer.newLine();
+//        writer.write("Конец группы: " + grpName);
+//        writer.newLine();
+//        writer.newLine();
         writer.flush();
     }
 
@@ -324,6 +351,7 @@ public class Analyzer {
         if(rbodyType == 0) {
             rbodyType = -1;
         }
+        names.clear();
     }
 
 
